@@ -1,5 +1,6 @@
 #include "Direction.hpp"
 #include <string>
+#include <iostream>
 #include <map>
 #include <vector>
 
