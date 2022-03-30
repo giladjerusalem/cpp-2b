@@ -14,9 +14,9 @@ namespace ariel
     map < int,vector < vector <char> > > book;
     public:
         Notebook();
-        void write(unsigned int, unsigned int, unsigned int, Direction, string);
-        string read(unsigned int, unsigned int, unsigned int, Direction, unsigned int);
-        void erase(unsigned int, unsigned int, unsigned int, Direction, unsigned int);
-        void show (unsigned int);
+        void write(int, int, int, Direction, string);
+        string read(int, int, int, Direction, int);
+        void erase(int, int, int, Direction, int);
+        void show (int);
     };
 }
