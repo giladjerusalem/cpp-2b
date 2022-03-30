@@ -2,6 +2,8 @@
 #include "Notebook.hpp"
 #include <string>
 #include <iostream>
+#include <map>
+#include <vector>
 
 const int WIDE = 100;
 const int MINIMUM = 32;
@@ -11,7 +13,7 @@ const int MAXIMUM = 126;
 using namespace std;
 namespace ariel{
     Notebook::Notebook(){}  //cunstructor
-void Notebook:: write(unsigned int page, unsigned int row, unsigned int col, Direction dir, string insert){
+void Notebook:: write( int page, int row, int col, Direction dir, string insert){
     
     if (page<0||row<0||col<0)   //if insert negative number
     {
@@ -25,7 +27,7 @@ void Notebook:: write(unsigned int page, unsigned int row, unsigned int col, Dir
     {
         if (insert[i]<MINIMUM || insert[i]>MAXIMUM || insert[i] == '~')
         {
-        throw ("out of boundries");
+            throw ("out of boundries");
         } 
     }
     
@@ -36,10 +38,8 @@ void Notebook:: write(unsigned int page, unsigned int row, unsigned int col, Dir
 
     if (!book.contains(page))   //if the page not exist - create a new page from with row+1 rows (cause we start from 0) 
     {
-        cout << "creating a new page";
         vector<vector<char>>page_created((size_t)row+1 , vector<char>(WIDE,'_'));  
         book[page]=page_created;
-        cout << "new page created";
     }
     else
     {
@@ -53,7 +53,8 @@ void Notebook:: write(unsigned int page, unsigned int row, unsigned int col, Dir
     {
         for (size_t i = 0; i < insert.size(); i++)
         {
-            if(i+row>=book[page].size()){   //if missing lines
+            if(i+(size_t)row>=book[page].size())
+            {   //if missing lines
                 while (book[page].size()<=(size_t)row+insert.size())
                 {
                     book[page].push_back(vector<char>(WIDE,'_'));   //add lines
@@ -62,7 +63,7 @@ void Notebook:: write(unsigned int page, unsigned int row, unsigned int col, Dir
             }
             if (book[page][(size_t)row+i][(size_t)col]!='_')
             {
-                throw;
+                throw ("override chars");
             }            
         }
         for (size_t i = 0; i < insert.size(); i++)  //copy the char from insert
@@ -70,14 +71,13 @@ void Notebook:: write(unsigned int page, unsigned int row, unsigned int col, Dir
             book[page][(size_t)row+i][(size_t)col]=insert[i];
         }
     }
-
-     if (dir == Direction::Horizontal)    //if the row doesnt exsit - create the row
+    else if (dir == Direction::Horizontal)    //if the row doesnt exsit - create the row
     {
         for (size_t i = 0; i < insert.size(); i++)
         {
             if (book[page][(size_t)row][(size_t)col+i]!='_')    //someone write/delete there
             {
-                throw;
+                throw ("override chars");
             }
         }
         for (size_t i = 0; i < insert.size(); i++)  //copy the char from "insert"
@@ -86,65 +86,75 @@ void Notebook:: write(unsigned int page, unsigned int row, unsigned int col, Dir
         }
 
     }
-    
-    for (int i = 0; i < insert.length(); i++)    //copy the string -horizon- char by char
-    {
-        book[page][row][col+i]=insert.at(i);
-    }
-    
-      for (int i = 0; i < insert.length(); i++)    //copy the string -vertical- char by char
-    {
-        book[page][row+i][col]=insert.at(i);
-    }
-    
 }
 
 
 //////////////////////////////////////////////////////
 
-string Notebook:: read(unsigned int page, unsigned int row, unsigned int col, Direction dir, unsigned int num){
-       if (page<0||row<0||col<0||num<0)   //if insert negative number
+string Notebook::read( int page, int row, int col, Direction dir, int num){
+    if (col>=WIDE||page<0||row<0||col<0||num<0)   //if insert negative number
     {
         throw ("not valid number: must be positive");
     }
 
-    if (dir==Direction::Horizontal && col+num >= WIDE)  //if the location + the string length is out of line
+    if (dir==Direction::Horizontal && col+num > WIDE)  //if the location + the string length is out of line
     {
         throw ("the string you trying to read is too long for this line");
     }
-
-    if (dir==Direction::Vertical && num >= book[page].size())  //if we want to read size bigger then the lines we have
+    if(num ==0)
     {
-        throw ("there is not enough lines to read from ");
+        return "";
     }
 
-    char ch = book[page][col][row];
-    string str;
-    str.append(1,ch);
+    if (!book.contains(page))   //if the page not exist - create a new page from with row+1 rows (cause we start from 0) 
+    {
+        vector<vector<char>>page_created((size_t)row+1 , vector<char>(WIDE,'_'));  
+        book[page]=page_created;
+    }
+    else
+    {
+        while (book[page].size()<=row)
+        {
+            book[page].push_back(vector<char>(WIDE,'_'));   //add lines
+        }        
+    }
+
+
+    string str(1, book[page][(size_t)row][(size_t)col]);
         
     if (dir==Direction::Horizontal)
-    {  
+    {   
+        bool first_time = true;
         for (size_t i = 0; i < num; i++)    //horizonial- add to str char by char
         {
-            bool first_time = true;
-            if(first_time==false)
+            if(!first_time)
             {
-                str+=book[page][row][col+i];
+                str+=book[page][(size_t)row][(size_t)col+i];
             }
-            first_time=false;
+            else
+            {
+                first_time=false;
+            }
         }
     }
-
-    if ((dir==Direction::Vertical))
+    else if (dir==Direction::Vertical)
     {
-       for (size_t i = 0; i < num; i++)    //vertical- add to str char by char
+        while (book[page].size()<=row + num)
         {
-            bool first_time = true;
-            if(first_time==false)
+            book[page].push_back(vector<char>(WIDE,'_'));   //add lines
+        }  
+        bool first_time = true;
+        for (size_t i = 0; i < num; i++)    //vertical- add to str char by char
+        {
+            if(!first_time)
             {
-            str+=book[page][row+i][col];
+                str+=book[page][(size_t)row+i][(size_t)col];
             }
-            first_time=false;
+            else
+            {
+                first_time=false;
+            }
+            
         } 
     }
     
@@ -153,28 +163,31 @@ string Notebook:: read(unsigned int page, unsigned int row, unsigned int col, Di
 
 ////////////////////////////////////////////////////////
 
-void Notebook:: erase(unsigned int page, unsigned int row, unsigned int col, Direction dir, unsigned int num){
+void Notebook::erase( int page, int row, int col, Direction dir, int num){
     if (page<0||row<0||col<0||num<0)   //if insert negative number
     {
         throw ("not valid number: must be positive");
     }
 
-    if (col>+WIDE){
+    if (col>=WIDE){
         throw ("out of boundries");
     }
 
-    if (dir == Direction::Horizontal && col + num >= WIDE)
-        {
-            throw ("you trying to write out of boundries");       //if the size of the string is over the end of line
+    if (dir == Direction::Horizontal && col + num > WIDE)
+    {
+        throw ("you trying to write out of boundries");       //if the size of the string is over the end of line
     }
-     if (!book.contains(page))   //if the page not exist - open a new page from with row+1 rows (cause we start from 0) 
+    if(num ==0)
+    {
+        return;
+    }
+    if (!book.contains(page))   //if the page not exist - open a new page from with row+1 rows (cause we start from 0) 
     {
         cout << "creating a new page";
         vector<vector<char>>page_created((size_t)row+1 , vector<char>(WIDE,'_'));  
         book[page]=page_created;
         cout << "new page created";
     }
-
     else
     {
         while (book[page].size()<=row)
@@ -186,15 +199,14 @@ void Notebook:: erase(unsigned int page, unsigned int row, unsigned int col, Dir
     if (dir == Direction::Vertical)    //if the row doesnt exsit - create the row
     {
         while (book[page].size() <= row + num)
-            {
-                book[page].push_back(vector<char>(WIDE,'_'));   //add lines
-            }
+        {
+            book[page].push_back(vector<char>(WIDE,'_'));   //add lines
+        }
         for (size_t i = 0; i < num; i++)  //copy the char from insert
         {
             book[page][(size_t)row+i][(size_t)col]='~';     //erase
         }
     }
-
     else if (dir == Direction::Horizontal)    //if the row doesnt exsit - create the row
     {
         for (size_t i = 0; i < num; i++)  //copy the char from insert
@@ -206,25 +218,25 @@ void Notebook:: erase(unsigned int page, unsigned int row, unsigned int col, Dir
 
 //////////////////////////////////////////////////////////////////////
 
-void Notebook:: show (unsigned int page){
+void Notebook:: show (int page){
     if (page<0)   //if insert negative number
     {
         throw ("not valid number: must be positive");
     }
 
     //if the page doesnt exist return "";
-    if (!book.contains(page))
+    if (!book.contains(page))   //if the page not exist - open a new page from with row+1 rows (cause we start from 0) 
     {
-        throw ("page does not exist");
+        return;
     }
 
-    string s = "page number %u :",page;
+    string s = "page number:" + to_string(page);
 
     for (size_t i = 0; i < book[page].size(); i++)
     {
         for (size_t j = 0; j < WIDE; j++)
         {
-             s+=book[page][i][j];
+             s+=book[page][(size_t )i][(size_t )j];
         }
         cout<<s;        //print on screen the 'i' line
         cout<<"\n";     //
